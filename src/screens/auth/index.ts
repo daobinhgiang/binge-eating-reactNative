@@ -1,3 +1,4 @@
 // Authentication screens exports
-// Add your auth screens here as you create them
-// Example: export { default as LoginScreen } from './LoginScreen';
+export { default as LoginScreen } from './LoginScreen';
+export { default as SignUpScreen } from './SignUpScreen';
+export { default as ForgotPasswordScreen } from './ForgotPasswordScreen';

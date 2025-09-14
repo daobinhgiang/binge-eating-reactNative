@@ -1,3 +1,3 @@
 // Context providers exports
-// Add your context providers here as you create them
-// Example: export { AuthProvider } from './AuthContext';
+export { AuthProvider, useAuth, AuthContext } from './AuthContext';
+export type { AuthContextType, SignupData } from './AuthContext';

@@ -333,7 +333,7 @@ export type MainTabParamList = {
   CheckIn: undefined;
   Education: undefined;
   Progress: undefined;
-  Messages: undefined;
+  Profile: undefined;
 };
 
 export type PatientStackParamList = {
@@ -418,6 +418,138 @@ export interface Notification {
   isRead: boolean;
   actionUrl?: string;
   createdAt: Timestamp;
+}
+
+// Analytics and Privacy Types
+export type AnalyticsEventType = 
+  | 'app_opened'
+  | 'app_closed'
+  | 'screen_viewed'
+  | 'button_clicked'
+  | 'form_submitted'
+  | 'module_started'
+  | 'module_completed'
+  | 'check_in_completed'
+  | 'error_occurred'
+  | 'feature_used'
+  | 'consent_given'
+  | 'consent_withdrawn';
+
+export type AnalyticsEventCategory = 
+  | 'navigation'
+  | 'engagement'
+  | 'performance'
+  | 'error'
+  | 'privacy'
+  | 'feature_usage'
+  | 'user_behavior';
+
+export interface AnalyticsEvent {
+  id: string;
+  type: AnalyticsEventType;
+  category: AnalyticsEventCategory;
+  timestamp: Timestamp;
+  
+  // Privacy-safe properties only
+  properties: {
+    // Screen/Page information (no personal data)
+    screen_name?: string;
+    previous_screen?: string;
+    
+    // Feature usage (generic identifiers only)
+    feature_name?: string;
+    module_id?: string;
+    action_type?: string;
+    
+    // Performance metrics
+    load_time?: number;
+    response_time?: number;
+    
+    // Error information (no personal data)
+    error_code?: string;
+    error_message?: string;
+    
+    // User journey context (anonymized)
+    session_id?: string;
+    user_journey_step?: string;
+    
+    // Engagement metrics
+    time_spent?: number;
+    interaction_count?: number;
+    
+    // Device/Platform info (no personal identifiers)
+    platform?: 'ios' | 'android' | 'web';
+    app_version?: string;
+    os_version?: string;
+  };
+  
+  // Consent and privacy metadata
+  consent: {
+    analytics_consent: boolean;
+    marketing_consent: boolean;
+    data_processing_consent: boolean;
+    consent_version: string;
+    consent_timestamp: Timestamp;
+  };
+  
+  // Anonymized user context (no PII)
+  user_context: {
+    user_role?: 'patient' | 'clinician';
+    is_authenticated: boolean;
+    session_duration?: number;
+  };
+}
+
+export interface ConsentPreferences {
+  id: string;
+  userId: string;
+  
+  // Consent categories
+  analytics: {
+    enabled: boolean;
+    consentGivenAt?: Timestamp;
+    consentWithdrawnAt?: Timestamp;
+    dataRetentionPeriod: number; // in days
+  };
+  
+  marketing: {
+    enabled: boolean;
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    consentGivenAt?: Timestamp;
+    consentWithdrawnAt?: Timestamp;
+  };
+  
+  dataProcessing: {
+    enabled: boolean;
+    research: boolean;
+    improvement: boolean;
+    thirdParty: boolean;
+    consentGivenAt?: Timestamp;
+    consentWithdrawnAt?: Timestamp;
+  };
+  
+  // Privacy settings
+  privacy: {
+    dataAnonymization: boolean;
+    dataMinimization: boolean;
+    rightToErasure: boolean;
+    dataPortability: boolean;
+  };
+  
+  // Consent management
+  consentVersion: string;
+  lastUpdated: Timestamp;
+  ipAddress?: string; // for legal compliance
+  userAgent?: string; // for legal compliance
+}
+
+export interface ConsentScreenProps {
+  onConsentChange: (preferences: Partial<ConsentPreferences>) => void;
+  initialPreferences?: Partial<ConsentPreferences>;
+  onComplete: () => void;
+  onDecline?: () => void;
 }
 
 // All types are exported above

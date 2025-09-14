@@ -6,6 +6,10 @@ import {
   User,
   UserCredential,
   AuthError as FirebaseAuthError,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -187,6 +191,121 @@ export const getCurrentUserProfile = async (): Promise<UserProfile | null> => {
   } catch (error) {
     console.error('Error getting current user profile:', error);
     return null;
+  }
+};
+
+// Google Auth Provider
+const googleProvider = new GoogleAuthProvider();
+
+// Configure Google Auth Provider
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+// Google Sign In with Popup (for web)
+export const signInWithGoogle = async (): Promise<{ user: User; profile: UserProfile }> => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
+    
+    // Check if user profile exists
+    let userProfile = await getCurrentUserProfile();
+    
+    // If no profile exists, create one with default role
+    if (!userProfile) {
+      const now = new Date().toISOString();
+      const defaultProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email || '',
+        role: 'patient', // Default role, can be changed later
+        firstName: user.displayName?.split(' ')[0] || '',
+        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      // Save user profile to Firestore
+      await setDoc(doc(db, 'users', user.uid), defaultProfile);
+      userProfile = defaultProfile;
+    }
+
+    if (__DEV__) {
+      console.log('User signed in with Google successfully:', user.uid);
+    }
+
+    return { user, profile: userProfile };
+  } catch (error) {
+    const authError = error as FirebaseAuthError;
+    console.error('Google sign in error:', authError.message);
+    
+    // Handle specific Google auth errors
+    switch (authError.code) {
+      case 'auth/popup-closed-by-user':
+        throw new Error('Sign in was cancelled. Please try again.');
+      case 'auth/popup-blocked':
+        throw new Error('Popup was blocked by your browser. Please allow popups and try again.');
+      case 'auth/cancelled-popup-request':
+        throw new Error('Sign in was cancelled. Please try again.');
+      case 'auth/account-exists-with-different-credential':
+        throw new Error('An account already exists with this email address. Please sign in with your existing method.');
+      default:
+        throw new Error('Failed to sign in with Google. Please try again.');
+    }
+  }
+};
+
+// Google Sign In with Redirect (for mobile)
+export const signInWithGoogleRedirect = async (): Promise<void> => {
+  try {
+    await signInWithRedirect(auth, googleProvider);
+  } catch (error) {
+    const authError = error as FirebaseAuthError;
+    console.error('Google redirect sign in error:', authError.message);
+    throw new Error('Failed to initiate Google sign in. Please try again.');
+  }
+};
+
+// Handle Google Sign In Redirect Result
+export const handleGoogleRedirectResult = async (): Promise<{ user: User; profile: UserProfile } | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    
+    if (!result) {
+      return null;
+    }
+    
+    const user = result.user;
+    
+    // Check if user profile exists
+    let userProfile = await getCurrentUserProfile();
+    
+    // If no profile exists, create one with default role
+    if (!userProfile) {
+      const now = new Date().toISOString();
+      const defaultProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email || '',
+        role: 'patient', // Default role, can be changed later
+        firstName: user.displayName?.split(' ')[0] || '',
+        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      // Save user profile to Firestore
+      await setDoc(doc(db, 'users', user.uid), defaultProfile);
+      userProfile = defaultProfile;
+    }
+
+    if (__DEV__) {
+      console.log('User signed in with Google redirect successfully:', user.uid);
+    }
+
+    return { user, profile: userProfile };
+  } catch (error) {
+    const authError = error as FirebaseAuthError;
+    console.error('Google redirect result error:', authError.message);
+    throw new Error('Failed to complete Google sign in. Please try again.');
   }
 };
 

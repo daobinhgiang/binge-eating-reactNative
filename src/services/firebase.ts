@@ -1,14 +1,17 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+// CORRECTED: Import the Auth type and the new initializeAuth function
+import { initializeAuth, Auth } from 'firebase/auth';
+// CORRECTED: Import persistence from its own specific module
+// import { getReactNativePersistence } from 'firebase/auth/react-native';
+import { getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import Constants from 'expo-constants';
 
 /**
  * Firebase Configuration for Healthcare React Native App
- * 
- * This file initializes Firebase using environment variables for secure configuration.
- * 
- * Setup Instructions:
+ * * This file initializes Firebase using environment variables for secure configuration.
+ * * Setup Instructions:
  * 1. Create a Firebase project at https://console.firebase.google.com/
  * 2. Add your app to the Firebase project
  * 3. Copy the config values from Firebase Console > Project Settings > General > Your apps
@@ -72,7 +75,7 @@ let auth: Auth;
 let db: Firestore;
 
 try {
-  // Check if Firebase is already initialized
+  // Check if Firebase is already initialized to prevent re-initialization
   if (getApps().length === 0) {
     const firebaseConfig = getFirebaseConfig();
     app = initializeApp(firebaseConfig);
@@ -81,11 +84,16 @@ try {
   }
 
   // Initialize Firebase services
-  auth = getAuth(app);
+  // CORRECTED: With Firebase v9+, you MUST explicitly provide persistence
+  // to initializeAuth to save the user's session.
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+  });
+  
   db = getFirestore(app);
 
   if (__DEV__) {
-    console.log('Firebase initialized successfully');
+    console.log('Firebase initialized successfully with Auth persistence');
   }
 } catch (error) {
   console.error('Failed to initialize Firebase:', error);
@@ -94,4 +102,3 @@ try {
 
 // Export Firebase services
 export { auth, db };
-export default app;

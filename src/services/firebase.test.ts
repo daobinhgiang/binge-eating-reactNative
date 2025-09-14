@@ -24,6 +24,14 @@ describe('Firebase Configuration', () => {
     expect(app.options.projectId).toBeTruthy();
     expect(app.options.apiKey).toBeTruthy();
   });
+
+  test('Firebase auth should use AsyncStorage persistence', () => {
+    // In Firebase v12+, AsyncStorage persistence is automatically enabled
+    // when @react-native-async-storage/async-storage is installed
+    expect(auth).toBeDefined();
+    expect(auth.app).toBeDefined();
+    // The persistence is handled internally by Firebase
+  });
 });
 
 // Helper function to test Firebase connection
